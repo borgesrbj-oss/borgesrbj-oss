@@ -1,0 +1,38 @@
+name: Atualizar projetos do perfil
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 9 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/atualizar-perfil.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-perfil
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Consultar apenas repositórios públicos
+        run: node scripts/atualizar-perfil.mjs
+      - name: Salvar README atualizado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: atualizar projetos públicos do perfil"
+            git push
+          fi
